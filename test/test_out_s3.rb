@@ -82,6 +82,18 @@ class S3OutputTest < Test::Unit::TestCase
       }
     end
 
+    def test_process_credentials
+      conf = CONFIG.clone
+      process_cred_conf = <<-HELLO
+        <process_credentials>
+            process_cmd "/bin/aws_signing_helper credential-process --certificate /etc/roles_anywhere/certificate.txt --private-key /etc/roles_anywhere/decoded_private_key.txt --trust-anchor-arn arn:aws:rolesanywhere:us-east-1:123456789000:trust-anchor/abcd0000-0000-0000-0000-000000000000 --profile-arn arn:aws:rolesanywhere:us-east-1:123456789000:profile/0000abcd-0000-0000-0000-000000000000 --role-arn arn:aws:iam::123456789000:role/external-server-access"
+        </process_credentials>
+      HELLO
+      conf << process_cred_conf
+      d = create_driver(conf)
+      assert_nothing_raised { d.run {} }
+    end
+
     def test_configure_with_mime_type_json
       conf = CONFIG.clone
       conf << "\nstore_as json\n"

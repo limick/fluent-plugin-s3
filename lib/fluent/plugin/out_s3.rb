@@ -83,6 +83,10 @@ module Fluent::Plugin
       desc "Profile name. Default to 'default' or ENV['AWS_PROFILE']"
       config_param :profile_name, :string, default: nil
     end
+    config_section :process_credentials, multi: false do
+      desc "Process credentials"
+      config_param :process_cmd, :string, default: nil
+    end
     desc "The number of attempts to load instance profile credentials from the EC2 metadata service using IAM role"
     config_param :aws_iam_retries, :integer, default: nil, deprecated: "Use 'instance_profile_credentials' instead"
     desc "S3 bucket name"
@@ -559,6 +563,11 @@ module Fluent::Plugin
         credentials_options[:path] = c.path if c.path
         credentials_options[:profile_name] = c.profile_name if c.profile_name
         options[:credentials] = Aws::SharedCredentials.new(credentials_options)
+      when @process_credentials
+        c = @process_credentials
+        credentials_options[:process_cmd] = c.process_cmd if c.process_cmd
+        log.info("Using process credentials")
+        options[:credentials] = Aws::ProcessCredentials.new(credentials_options[:process_cmd])
       when @aws_iam_retries
         log.warn("'aws_iam_retries' parameter is deprecated. Use 'instance_profile_credentials' instead")
         credentials_options[:retries] = @aws_iam_retries
@@ -570,6 +579,7 @@ module Fluent::Plugin
       else
         # Use default credentials
         # See http://docs.aws.amazon.com/sdkforruby/api/Aws/S3/Client.html
+        log.warn("Using default credentials")
       end
       options
     end
